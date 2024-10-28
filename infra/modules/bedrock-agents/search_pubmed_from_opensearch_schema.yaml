@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Search And Summarize From Curated PubmedArticles
   version: 1.0.0
-  description: API to response to user if the user ask about GZMK, CD4, or CD8. 
+  description: API to response to user if the user ask to search and summarize curated pubmedarticles.
 paths:
   /searchAndSummarize:
     get:

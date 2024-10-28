@@ -7,9 +7,9 @@ import json
 import pandas as pd
 import boto3
 
-region = os.getenv('REGION') # 'us-east-1'
-samplePromptsDDName = os.getenv('SAMPLE_PROMPTS_DD') # 'pubmed-assist-sample-prompts'
-bedrockAgentID = os.getenv('BEDROCK_AGENT_ID') # TYPUDRVK6N
+region = os.getenv('REGION')
+samplePromptsDDName = os.getenv('SAMPLE_PROMPTS_DD')
+bedrockAgentID = os.getenv('BEDROCK_AGENT_ID')
 bedrockAgentAliasID = os.getenv('BEDROCK_AGENT_ALIAS_ID', '') 
 bedrockAgentAliasID = bedrockAgentAliasID.split(',')[0] if ',' in bedrockAgentAliasID else bedrockAgentAliasID
 

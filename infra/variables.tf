@@ -1,13 +1,11 @@
 variable "aws_region" {
   description = "The AWS region to deploy resources into"
   type        = string
-  default     = "us-east-1"
 }
 
 variable "project_name" {
   description = "The name of the project, used for naming resources"
   type        = string
-  default     = "pubmed-assist"
 }
 
 variable "vpc_cidr" {

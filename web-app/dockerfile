@@ -4,7 +4,8 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y
 COPY requirements.txt ./requirements.txt
 RUN pip install -r requirements.txt
-COPY . .
+COPY app.py app.py
+COPY bedrockAgentLib.py bedrockAgentLib.py
 CMD streamlit run app.py --server.enableCORS false --server.enableXsrfProtection false
 
 # docker buildx build --platform linux/amd64 --output type=docker -t genai-rag-cost-estimator-lnx .

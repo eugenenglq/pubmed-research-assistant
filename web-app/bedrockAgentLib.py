@@ -1,6 +1,3 @@
-from boto3.session import Session
-from botocore.auth import SigV4Auth
-from botocore.awsrequest import AWSRequest
 import logging
 import json
 import os
@@ -36,9 +33,6 @@ class BedrockAgentLib:
             # and the length of the prompt. In some cases, it can take up to a minute or more to
             # generate a response.
 
-            print(self.agent_id)
-            print(self.agent_alias_id)
-
             response = self.client.invoke_agent(
                 agentId=self.agent_id,
                 agentAliasId=self.agent_alias_id,
@@ -54,14 +48,6 @@ class BedrockAgentLib:
                 if "bytes" in chunk:
                     completion = completion + chunk["bytes"].decode()
                 print(chunk)
-
-            print('--complete')
-            print(completion)
-            # # Parse the string to a dictionary
-            # response_dict = ast.literal_eval(completion)
-
-            # # Extract and decode the bytes object
-            # response_text = response_dict['bytes'].decode('utf-8')
 
         except Exception as e:
             logger.error(f"Couldn't invoke agent. {e}")

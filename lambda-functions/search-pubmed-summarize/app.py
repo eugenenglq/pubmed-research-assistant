@@ -15,21 +15,23 @@ def lambda_handler(event, context):
     pmc_id = event.get('pmc_id')
     extra_prompt = event.get('extra_prompt', '')
 
-    print('pmc_id', pmc_id)
-    print('extra_prompt', extra_prompt)
     if not pmc_id:
         properties = event.get('requestBody', {}).get('content', {}).get('application/json', {}).get('properties', [])
         for prop in properties:
             if prop.get('name') == 'pmc_id':
                 pmc_id = prop.get('value')
                 pmc_id = pmc_id.replace('PMC', '')
+            if prop.get('name') == 'extra_prompt':
+                extra_prompt = prop.get('value')
+
+    print('pmc_id', pmc_id)
+    print('extra_prompt', extra_prompt)
 
     # Make request to NCBI E-utilities
     url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id={pmc_id}"
     
     print(url)
     response = requests.get(url)
-    print(response.text)
     if response.status_code != 200:
         return {
             'statusCode': response.status_code,

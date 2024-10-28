@@ -12,6 +12,9 @@ env/
 .venv/
 .virtualenv/
 
+# Ignore package files
+lambda-layers/python-common/python/
+
 # Terraform files
 .terraform/
 *.tfstate

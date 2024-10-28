@@ -23,7 +23,7 @@ paths:
                   description: PMCID of the PubMed Article
                 other_info_and_topics:
                   type: string
-                  description: Additional information or topics the user wants to include in the summary. This field is optional, but if provided, the summary should include details related to the specified topics or information. For example, "include the list of authors" or "focus on the results section".
+                  description: Additional information or topics the user wants to include in the summary. This field is optional, but if provided, the summary should include details related to the specified topics or information. For example, "include the list of authors" or "focus on the results section" or "and also the list of authors" or "and list down the references".
 
       responses:
         "200":

@@ -9,19 +9,12 @@ import lib.opensearch as opensearchlib
 import lib.pubmed as pubmedlib
 from datetime import datetime
 
-region = os.getenv('REGION') # 'us-east-1'
-searchTermDD = os.getenv('SEARCH_TERM_DD') # 'search term dynamodb table name'
-collection_name = os.getenv('COLLECTION_NAME') # 'pubmed-assist-pubmed-collection'
-index_name = os.getenv('INDEX_NAME') # 'pubmed-assist-pubmed-collection'
-termList = os.getenv('SEARCH_TERMS') # 'us-east-1'
-embedding_model = os.getenv('EMBEDDING_MODEL') # 'cohere.embed-english-v3'
-
-# region = 'us-east-1'
-# searchTermDD = 'pubmed-assist-pubmed-search-term'
-# collection_name = 'pubmed-assist-pubmed-collection'
-# index_name = 'pubmed-abstracts'
-# termList = 'GZMK'
-# embedding_model = 'amazon.titan-embed-text-v2:0' # 'cohere.embed-english-v3'
+region = os.getenv('REGION')
+searchTermDD = os.getenv('SEARCH_TERM_DD')
+collection_name = os.getenv('COLLECTION_NAME')
+index_name = os.getenv('INDEX_NAME')
+termList = os.getenv('SEARCH_TERMS')
+embedding_model = os.getenv('EMBEDDING_MODEL')
 
 bedrock_client = boto3.client("bedrock-runtime", region_name=region)
 

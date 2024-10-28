@@ -33,6 +33,11 @@ variable "ecs_security_group_id" {
   type        = string
 }
 
+variable "search_os_pubmed_lambda_image_digest" {
+  description = "The image digerst for search_os_pubmed_lambda image"
+  type        = string
+}
+
 variable "search_os_pubmed_lambda_repository_url" {
   description = "The ECR repo url for search_os_pubmed_lambda"
   type        = string

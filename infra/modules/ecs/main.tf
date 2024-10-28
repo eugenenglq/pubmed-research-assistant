@@ -41,9 +41,11 @@ resource "aws_ecs_task_definition" "web_app" {
       image = "${var.web_app_ecr_repository_url}:latest"
       portMappings = [
         {
+          name          = "8501"
           containerPort = 8501
           hostPort      = 8501
           protocol      = "tcp"
+          appProtocol   = "http"
         }
       ]
       logConfiguration = {
@@ -183,6 +185,24 @@ resource "aws_iam_role" "web_app_task_role" {
   })
 }
 
+resource "aws_iam_role_policy" "dynamodb_access" {
+  name = "${var.project_name}-dynamodb-access"
+  role = aws_iam_role.web_app_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:Scan",
+          "dynamodb:GetItem"
+        ]
+        Resource = "arn:aws:dynamodb:*:*:table/${var.project_name}*"
+      }
+    ]
+  })
+}
 
 resource "aws_iam_role_policy_attachments_exclusive" "web_app_task_role" {
   role_name       = aws_iam_role.web_app_task_role.name
