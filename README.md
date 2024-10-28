@@ -18,10 +18,10 @@ This solution allow users to do:
 
 > [!Pre-requisites]
    JQ
-   # For macOS
+   For macOS
    brew install jq
 
-   # For Ubuntu/Debian
+   For Ubuntu/Debian
    sudo apt-get install jq
 
 
