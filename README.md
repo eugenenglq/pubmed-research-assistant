@@ -4,11 +4,15 @@
 Eugene Ng
 
 # Introduction
-One of the pain points from researchers for their work is the amount of time spent on PubMed to research on the their topic. After reading through abstracts, researcher will pick the most relevant article to read through the actual paper itself. 
-This solution allow users to do:
-1. Ask questions on the curated Pubmed articles
-2. List down relevant PubMed articles with the corresponding PMCID
-3. Search and summarize Pubmed article by passing PMCID
+Researchers often face challenges when searching for relevant information on PubMed, as it can be time-consuming to sift through numerous abstracts and full-text articles. To address this issue, this solution offers a streamlined approach to exploring and summarizing PubMed articles, empowering researchers to work more efficiently.
+
+Key Features:
+
+1. **Query-based Information Retrieval**: Researchers can ask specific questions related to their topic of interest, and this solution will process the curated PubMed articles to provide relevant answers. This eliminates the need to manually scan through vast amounts of data, saving valuable time and effort.
+
+2. **Curated Article Listing**: This solution can generate a list of relevant PubMed articles, along with their corresponding PubMed Central Identifiers (PMCIDs), based on the researcher's query or topic of interest. This curated list serves as a starting point for further exploration, allowing researchers to quickly identify potentially useful articles.
+
+3. **Article Summarization**: By providing the PMCID of a specific PubMed article, this solution can retrieve and summarize the full-text content of that article. This feature enables researchers to quickly grasp the key points and findings of an article without having to read through the entire document, facilitating efficient decision-making regarding which articles warrant further in-depth examination.
 
 # Architecture
 
