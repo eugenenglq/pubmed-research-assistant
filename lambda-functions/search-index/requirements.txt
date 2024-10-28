@@ -1,0 +1,9 @@
+langchain
+langchain-community
+langchain-core
+langchain_aws
+jq
+opensearch-py
+requests-aws4auth
+xmltodict
+pydantic_core

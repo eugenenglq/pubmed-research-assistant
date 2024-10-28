@@ -1,0 +1,23 @@
+# Use an official Python runtime as the base image
+FROM --platform=linux/amd64 python:3.9-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+COPY requirements.txt .
+
+# Install any needed packages specified in requirements.txt
+# If you don't have a requirements.txt, you can comment out this line
+RUN pip install -r requirements.txt
+
+# Copy the Python script into the container
+COPY app.py .
+
+COPY lib /app/lib
+
+# Copy the requirements file (if you have one)
+
+# Install any specific packages your
+
+# Run the Python script when the container launches
+CMD ["python", "app.py"]

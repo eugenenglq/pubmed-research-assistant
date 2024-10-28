@@ -1,0 +1,58 @@
+openapi: 3.0.0
+info:
+  title: Search And Summarize From Curated PubmedArticles
+  version: 1.0.0
+  description: API to response to user if the user ask about GZMK, CD4, or CD8. 
+paths:
+  /searchAndSummarize:
+    get:
+      summary: Search and summarize the information based on user query. This is not to list down related articles.
+      description: Return information by searching internal opensearch, summarize and return user with the information
+      operationId: searchAndSummarize
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                input:
+                  type: string
+                  description: User input
+      responses:
+        "200":
+          description: Get the summary based on user query
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  answer:
+                    type: string
+                    description: The summary related to user query.
+  /searchAndListResults:
+    get:
+      summary: Search for the information and list in list format based on user query. This is to list down related articles.
+      description: This API allow user to search for a list of articles and list down the list of articles in a list format that consists of PMID, Title, PMCID, DOI, PII, PubDate. 
+      operationId: searchAndListResults
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                input:
+                  type: string
+                  description: User input
+      responses:
+        "200":
+          description: Return the results in table format.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  answer:
+                    type: string
+                    description: The summary related to user query.

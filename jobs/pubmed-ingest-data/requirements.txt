@@ -1,0 +1,12 @@
+langchain 
+boto3 
+langchain 
+langchain-community 
+langchain-core 
+coloredlogs 
+jq 
+opensearch-py 
+loguru 
+requests-aws4auth 
+metapub 
+xmltodict

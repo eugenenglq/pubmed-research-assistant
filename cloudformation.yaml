@@ -1,0 +1,612 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation script for a research assistant project
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  ProjectName:
+    Type: String
+    Description: The name of the project
+    Default: 'pubmed-assistant-1'
+  VpcCidrBlock:
+    Type: String
+    Description: CIDR block for the VPC
+    Default: 10.0.0.0/16
+  PublicSubnet1CidrBlock:
+    Type: String
+    Description: CIDR block for Public Subnet 1
+    Default: 10.0.0.0/24
+  PublicSubnet2CidrBlock:
+    Type: String
+    Description: CIDR block for Public Subnet 2
+    Default: 10.0.1.0/24
+  PrivateSubnet1CidrBlock:
+    Type: String
+    Description: CIDR block for Private Subnet 1
+    Default: 10.0.2.0/24
+  PrivateSubnet2CidrBlock:
+    Type: String
+    Description: CIDR block for Private Subnet 2
+    Default: 10.0.3.0/24
+
+Resources:
+
+  # VPC and Subnet Resources
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidrBlock
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-VPC"
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Ref PublicSubnet1CidrBlock
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-Public-Subnet-1"
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Ref PublicSubnet2CidrBlock
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-Public-Subnet-2"
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Ref PrivateSubnet1CidrBlock
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-Private-Subnet-1"
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Ref PrivateSubnet2CidrBlock
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-Private-Subnet-2"
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-IGW"
+
+  # Attach Internet Gateway to VPC
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  
+  # Route Table for Public Subnets
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-Public-RT"
+
+  # Route to Internet Gateway
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  # Associate Public Subnets with the Public Route Table
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  # Route Table for Private Subnets
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-Private-RT"
+
+  # Associate Private Subnets with the Private Route Table
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable
+  
+  # NAT Gateway
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGatewayEIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-NAT-GW"
+
+  NatGatewayEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  # Route to NAT Gateway
+  PrivateRouteToInternet:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+      
+  # Security Group
+  WebAppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${ProjectName}-WebApp-SG"
+      GroupDescription: Security group for the web application
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 8501
+          CidrIp: 0.0.0.0/0
+      VpcId: !Ref VPC
+
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "${ProjectName}-cluster"
+      CapacityProviders: 
+        - FARGATE
+        - FARGATE_SPOT
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE
+          Weight: 1
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  ECSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for ECS tasks
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-ecs-sg"
+
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for ALB
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-alb-sg"
+
+  # Web Application Resources
+  WebAppTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonOpenSearchServiceFullAccess
+        - arn:aws:iam::aws:policy/AmazonBedrockFullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+  ECSExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-ecs-execution-role"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: ECRAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                Resource: '*'
+        - PolicyName: CloudWatchLogsAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+  IngestTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonOpenSearchServiceFullAccess
+        - arn:aws:iam::aws:policy/AmazonBedrockFullAccess
+
+  LambdaTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonOpenSearchServiceFullAccess
+        - arn:aws:iam::aws:policy/AmazonBedrockFullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+
+  WebAppECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub "${ProjectName}-web-app"
+
+  WebAppECSTask:
+    Type: AWS::ECS::TaskDefinition
+    DependsOn: WebAppLogGroup
+    Properties:
+      Family: !Sub "${ProjectName}-web-app"
+      TaskRoleArn: !Ref WebAppTaskRole
+      ExecutionRoleArn: !Ref ECSExecutionRole
+      Cpu: '256'
+      Memory: '512'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+      - FARGATE
+      RuntimePlatform:
+        OperatingSystemFamily: LINUX
+        CpuArchitecture: X86_64
+      ContainerDefinitions:
+        - Name: web-app
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${WebAppECRRepository}:latest"
+          PortMappings:
+          - ContainerPort: 8501
+            HostPort: 8501
+            Protocol: tcp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref WebAppLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+          Cpu: '256'
+          Memory: '512'
+
+  WebAppLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/ecs/${ProjectName}-web-app"
+      RetentionInDays: 30
+
+  WebAppECSService:
+    Type: AWS::ECS::Service
+    DependsOn: WebAppALBListener
+    Properties:
+      ServiceName: !Sub "${ProjectName}-web-app"
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref WebAppECSTask
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - !Ref WebAppSecurityGroup
+          Subnets:
+            - !Ref PrivateSubnet1
+            - !Ref PrivateSubnet2
+      DesiredCount: 2
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      EnableECSManagedTags: true
+      HealthCheckGracePeriodSeconds: 60
+      LoadBalancers:
+        - ContainerName: web-app
+          ContainerPort: 8501
+          TargetGroupArn: !Ref WebAppALBTargetGroup
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  WebAppALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref WebAppSecurityGroup
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+
+  WebAppALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref WebAppALBTargetGroup
+      LoadBalancerArn: !Ref WebAppALB
+      Port: 80
+      Protocol: HTTP
+
+  WebAppALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckPath: /
+      Name: !Sub "${ProjectName}-web-app"
+      Port: 8501
+      Protocol: HTTP
+      TargetType: ip
+      VpcId: !Ref VPC
+
+  # Database Resources  
+  PubMedSearchTermDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-pubmed-search-term"
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: searchTerm
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: searchTerm
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+
+  PubMedSearchTermDynamoDBStreamLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-pubmed-search-term-stream"
+      Runtime: python3.9
+      Handler: app.lambda_handler
+      Role: !GetAtt LambdaTaskRole.Arn
+      Environment:
+        Variables:
+          CLUSTER_ARN: !Ref ECSCluster
+          TASK_DEFINITION_ARN: !Ref IngestECSTask
+          SUBNET_ID: !Ref PrivateSubnet1
+          SECURITY_GROUP_ID: !Ref ECSSecurityGroup
+      Code:
+        ZipFile: |
+          import os
+          import boto3
+
+          def lambda_handler(event, context):
+              client = boto3.client('ecs')
+              
+              cluster_arn = os.environ['CLUSTER_ARN']
+              task_definition_arn = os.environ['TASK_DEFINITION_ARN']
+              search_term = event.get('searchTerm', '')  # Assuming searchTerm is passed in the event
+
+              response = client.run_task(
+                  cluster=cluster_arn,
+                  taskDefinition=task_definition_arn,
+                  overrides={
+                      'containerOverrides': [
+                          {
+                              'name': 'ingest',
+                              'environment': [
+                                  {
+                                      'name': 'SEARCH_TERM',
+                                      'value': search_term
+                                  }
+                              ]
+                          }
+                      ]
+                  },
+                  launchType='FARGATE',
+                  networkConfiguration={
+                      'awsvpcConfiguration': {
+                          'subnets': [os.environ['SUBNET_ID']],
+                          'securityGroups': [os.environ['SECURITY_GROUP_ID']],
+                          'assignPublicIp': 'DISABLED'
+                      }
+                  }
+              )
+
+              # Process the response as needed
+              return {
+                  'statusCode': 200,
+                  'body': f"Task started: {response['tasks'][0]['taskArn']}"
+              }
+  PubMedSearchTermDynamoDBStreamLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt PubMedSearchTermDynamoDBStreamLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: 'dynamodb.amazonaws.com'
+
+  PubMedSearchTermDynamoDBStreamTrigger:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt PubMedSearchTermDynamoDBTable.StreamArn
+      FunctionName: !Ref PubMedSearchTermDynamoDBStreamLambda
+      StartingPosition: TRIM_HORIZON
+      BatchSize: 100
+      MaximumBatchingWindowInSeconds: 0
+      Enabled: true
+
+  # Ingestion Batch Job Resources
+  IngestECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub "${ProjectName}-ingest"
+
+  IngestECSTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub "${ProjectName}-ingest"
+      TaskRoleArn: !Ref IngestTaskRole
+      ExecutionRoleArn: !Ref ECSExecutionRole
+      Cpu: '256'
+      Memory: '512'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+      - FARGATE
+      ContainerDefinitions:
+        - Name: ingest
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${IngestECRRepository}:latest"
+          Cpu: '256'
+          Memory: '512'
+          # Environment:
+          #   - Name: SEARCH_TERM
+          #     ValueFrom: !Ref PubMedSearchTermDynamoDBStreamLambda.Arn
+
+  LambdaSearchOpenSearchPubmed:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-search-os-pubmed"
+      Description: "Lambda function to search PubMed articles from OpenSearch"
+      Runtime: python3.9
+      Handler: app.lambda_handler
+      Role: !GetAtt LambdaTaskRole.Arn
+      CodeUri: lambda-search-os-pubmed/
+      Environment:
+        Variables:
+          BEDROCK_EMBEDDING_MODEL_ID: amazon.titan-embed-text-v2:0
+          BEDROCK_MODEL_ID: "anthropic.claude-3-sonnet-20240229-v1:0"
+          INDEX_NAME: "pubmed-genes"
+
+  # S3 Bucket Resource
+  ProjectBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-bucket"
+      VersioningConfiguration:
+        Status: Enabled
+
+
+Outputs:
+  VPC:
+    Description: VPC for the Project
+    Value: !Ref VPC
+
+  PublicSubnet1:
+    Description: Public Subnet 1 for the Project
+    Value: !Ref PublicSubnet1
+
+  PublicSubnet2:
+    Description: Public Subnet 2 for the Project
+    Value: !Ref PublicSubnet2
+
+  PrivateSubnet1:
+    Description: Private Subnet 1 for the Project
+    Value: !Ref PrivateSubnet1
+
+  PrivateSubnet2:
+    Description: Private Subnet 2 for the Project
+    Value: !Ref PrivateSubnet2
+
+  WebAppSecurityGroup:
+    Description: Security Group for the Web Application
+    Value: !Ref WebAppSecurityGroup
+
+  WebAppTaskRole:
+    Description: Task Role for the Web Application
+    Value: !Ref WebAppTaskRole
+
+  IngestTaskRole:
+    Description: Task Role for the Ingestion Container
+    Value: !Ref IngestTaskRole
+
+  WebAppECRRepository:
+    Description: ECR Repository for the Web Application
+    Value: !Ref WebAppECRRepository
+
+  PubMedSearchTermDynamoDBTable:
+    Description: DynamoDB Table for PubMed Search Terms
+    Value: !Ref PubMedSearchTermDynamoDBTable
+
+  IngestECRRepository:
+    Description: ECR Repository for the Ingestion Container
+    Value: !Ref IngestECRRepository
+
+  # PubMedSearchAndSummarizeLambda:
+  #   Description: Lambda Function for PubMed Search and Summarize
+  #   Value: !Ref PubMedSearchAndSummarize
+
+  # PubMedGenerateResponseLambda:
+  #   Description: Lambda Function for PubMed Response Generation
+  #   Value: !Ref PubMedGenerateResponseLambda
+

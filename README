@@ -1,0 +1,10 @@
+
+
+# STEPS
+
+1. Create bucket for deployment packages
+2. Run package
+aws cloudformation package --template-file cloudformation.yaml --s3-bucket sh-genai-bucket-dev --output-template-file output-cloudformation.yaml
+3. Deploy
+
+aws cloudformation deploy --template-file output-cloudformation.yaml --stack-name research-assistant --parameter-overrides ProjectName=research-assistant VpcCidrBlock=10.0.0.0/16 PublicSubnet1CidrBlock=10.0.0.0/24 PublicSubnet2CidrBlock=10.0.1.0/24 PrivateSubnet1CidrBlock=10.0.2.0/24 PrivateSubnet2CidrBlock=10.0.3.0/24 --capabilities CAPABILITY_NAMED_IAM

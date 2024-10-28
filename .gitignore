@@ -1,0 +1,29 @@
+# Ignore bin folder
+bin/
+
+# Ignore .bak files
+*.bak
+
+.DS_STORE
+
+# Virtual environment
+venv/
+env/
+.venv/
+.virtualenv/
+
+# Terraform files
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+crash.log
+crash.*.log
+.terraform.*

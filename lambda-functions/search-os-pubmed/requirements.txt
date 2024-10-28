@@ -1,0 +1,9 @@
+boto3
+langchain
+langchain_core
+opensearch-py
+requests_aws4auth
+langchain_community
+langchain_aws
+xmltodict
+pydantic_core

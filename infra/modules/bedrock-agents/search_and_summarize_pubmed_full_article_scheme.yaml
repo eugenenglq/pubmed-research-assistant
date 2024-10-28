@@ -1,0 +1,38 @@
+openapi: 3.0.0
+info:
+  title: Search And Summarize From Pubmed Full Article
+  version: 1.0.0
+  description: API to response to user if the user ask to summarize full article.
+paths:
+  /searchPubMedAndSummarizeFullArticle:
+    get:
+      summary: Search and summarize full article of PubMed article based on user query. This function is for user to summarize full article instead of abstract. In order to trigger this, user has to pass the PMCID, and any other topics or information that the user wants to find out more.
+      description: Return summary of full article by requesting via PubMed API. User may pass extra prompt to LLM to get more context.
+      operationId: searchPubMedAndSummarizeFullArticle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - pmc_id
+              properties:
+                pmc_id:
+                  type: string
+                  description: PMCID of the PubMed Article
+                other_info_and_topics:
+                  type: string
+                  description: Additional information or topics the user wants to include in the summary. This field is optional, but if provided, the summary should include details related to the specified topics or information. For example, "include the list of authors" or "focus on the results section".
+
+      responses:
+        "200":
+          description: Get the summary based on user query
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  answer:
+                    type: string
+                    description: The summary related to user query.
