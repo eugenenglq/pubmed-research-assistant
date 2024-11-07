@@ -321,6 +321,7 @@ resource "aws_iam_role_policy" "ingest_task_role_aoss_access" {
       {
         Effect = "Allow"
         Action = [
+          "dynamodb:UpdateItem",
           "dynamodb:PutItem",
           "dynamodb:BatchWriteItem"
         ]

@@ -83,38 +83,47 @@ def fetch_pubmed_abstracts(idlist):
                 pub_year = article.findtext(".//DateRevised/Year")
                 pub_month = article.findtext(".//DateRevised/Month")
                 pub_day = article.findtext(".//DateRevised/Day").zfill(2)  # Ensure two-digit day format
-                output['pubDate'] = f"{pub_year}-{pub_month}-{pub_day}"
+                pub_date = f"{pub_year}-{pub_month}-{pub_day}"
             except Exception as e:
-                print(e)
-
+                print('Pub date', e)
+                print('article', article)
+            output['pubDate'] = pub_date
             # Extract Abstract text
             # abstract_texts = [abstract.text for abstract in article.findall(".//AbstractText")]
             # abstract_text = ' '.join(abstract_texts)
-            abstract_text_elements = article.findall('.//AbstractText')
 
-            if len(abstract_text_elements) == 0:
-                return None
-            else:
-                output['abstract'] = ' '.join([ET.tostring(e, encoding='unicode', method='text') for e in abstract_text_elements])
+            try:
+                abstract_text_elements = article.findall('.//AbstractText')
+                output['abstract'] = ' '.join([ET.tostring(e, encoding='unicode', method='text') for e in abstract_text_elements]) if len(abstract_text_elements) == 0 else ''
 
-            # Extract authors' names from the AuthorList
-            authors = []
-            for author in article.findall('.//Author'):
-                last_name = author.findtext('.//LastName')
-                fore_name = author.findtext('.//ForeName')
-                if last_name and fore_name:
-                    authors.append(f"{fore_name} {last_name}")
-            output['authors'] = ', '.join(authors)
+            except Exception as e:
+                print('Abstract', e)
+                print('article', article)
+
+            try:
+                # Extract authors' names from the AuthorList
+                authors = []
+                for author in article.findall('.//Author'):
+                    last_name = author.findtext('.//LastName')
+                    fore_name = author.findtext('.//ForeName')
+                    if last_name and fore_name:
+                        authors.append(f"{fore_name} {last_name}")
+                output['authors'] = ', '.join(authors) if authors is not None and len(authors) > 0 else ''
             
-            # Extract keywords
-            keywords = [keyword.text for keyword in article.findall('.//Keyword')]
-            output['keywords'] = ', '.join(keywords)
+            except Exception as e:
+                print('Author', e)
+                print('article', article)
             
+            try:
+                # Extract keywords
+                keywords = [keyword.text for keyword in article.findall('.//Keyword')]
+                output['keywords'] = ', '.join(keywords) if keywords is not None and len(keywords) > 0 else []
+            except Exception as e:
+                print('keywords', e)
+                print('article', article)
             return output
         except Exception as e:
             print(f'Error while extracting, error message: {e}')
-            print(pmid)
-            print('----')
 
         return None
     

@@ -9,16 +9,24 @@ import lib.opensearch as opensearchlib
 import lib.pubmed as pubmedlib
 from datetime import datetime
 
-region = os.getenv('REGION')
+region = os.getenv('REGION') 
 searchTermDD = os.getenv('SEARCH_TERM_DD')
 collection_name = os.getenv('COLLECTION_NAME')
 index_name = os.getenv('INDEX_NAME')
 termList = os.getenv('SEARCH_TERMS')
 embedding_model = os.getenv('EMBEDDING_MODEL')
 
+# region = 'us-east-1'
+# searchTermDD = 'pubmed-assist-pubmed-search-term'
+# collection_name = 'pubmed-assist-pubmed-collection'
+# index_name = 'pubmed-genes'
+# termList = 'cd14'
+# embedding_model = 'amazon.titan-embed-text-v2:0'
+
 bedrock_client = boto3.client("bedrock-runtime", region_name=region)
 
 def main():
+    print('Search Term: ', termList)
     opensearch_client = boto3.client('opensearchserverless')
     hostname = opensearchlib.waitForCollectionCreation(opensearch_client, collection_name)
     opensearch_con = opensearchlib.get_opensearch_cluster_client(hostname)
@@ -64,8 +72,8 @@ def loadToVectorStore(opensearch_con, pubmedAbstractResults):
             result['title'],
             result['abstract'],
             result['pubDate'] if 'pubDate' in result else '',
-            result['authors'],
-            result['keywords'],
+            result['authors'] if 'authors' in result else '',
+            result['keywords'] if 'keywords' in result else '',
             result['pubmed'] if 'pubmed' in result else '',
             result['pmc'] if 'pmc' in result else '',
             result['doi'] if 'doi' in result else '',

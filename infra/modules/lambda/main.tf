@@ -19,6 +19,12 @@ resource "aws_lambda_layer_version" "python_common_layer" {
   description         = "Common Python 3.9 layer"
 }
 
+
+data "aws_ecr_image" "search_os_pubmed_lambda_repository_image" {
+  repository_name = var.search_os_pubmed_lambda_repository_name
+  image_tag       = "latest"
+}
+
 resource "aws_lambda_function" "search_os_pubmed" {
   function_name    = "${var.project_name}-search-os-pubmed"
   role             = aws_iam_role.lambda_task_role.arn
@@ -33,6 +39,7 @@ resource "aws_lambda_function" "search_os_pubmed" {
       INDEX_NAME                 = "pubmed-abstract"
     }
   }
+  source_code_hash = trimprefix(data.aws_ecr_image.search_os_pubmed_lambda_repository_image.id, "sha256:")
 
   tags = {
     Name        = "${var.project_name}-search-os-pubmed"

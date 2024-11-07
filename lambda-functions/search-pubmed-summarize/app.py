@@ -14,7 +14,7 @@ def lambda_handler(event, context):
     api_path = event['apiPath']
     pmc_id = event.get('pmc_id')
     extra_prompt = event.get('extra_prompt', '')
-
+    inputText = event.get('inputText', '')
     if not pmc_id:
         properties = event.get('requestBody', {}).get('content', {}).get('application/json', {}).get('properties', [])
         for prop in properties:
@@ -49,20 +49,33 @@ def lambda_handler(event, context):
 
     body_text = ET.tostring(body_element, encoding='unicode', method='text')
 
+    contributors_list = []
+    contributors_text = ''
+    # Find all contributor elements
+    contributors = root.findall(".//contrib")
+
+    # Loop through each contributor and extract surname and given names
+    for contrib in contributors:
+        # Get the surname and given-names elements
+        name = contrib.find("name")
+        if name is not None:
+            surname = name.find("surname").text if name.find("surname") is not None else "No surname"
+            given_names = name.find("given-names").text if name.find("given-names") is not None else "No given names"
+            
+            # Print the extracted information
+            contributors_list.append(surname + given_names)
+    contributors_text += ', '.join(contributors_list)
+    
     # Summarize using Bedrock
     bedrock_runtime = boto3.client('bedrock-runtime', region_name=region)
     
-    prompt = f"""Summarize the following scientific article:
-
-    {body_text}
-
-    Provide a concise summary that captures the main points, methods, results, and conclusions of the article. 
-    {extra_prompt}
-    The summary should be no more than 500 words and need to break down into titles. Do not need to tell me total how many words."""
-
+    prompt = f"""<article>{body_text}</article>
+    <authors>{contributors_text}</authors>
+    The article in <article> tag and the authors list is in <authors> tag for the PMCID: {pmc_id}.
+    {inputText}"""
     prompt_template = f"""Summarize the following scientific article:
 
-    Provide a concise summary that captures the main points, methods, results, and conclusions of the article. 
+    Provide a concise summary that captures the authors, main points, methods, results, and conclusions of the article. 
     {extra_prompt}
     The summary should be no more than 500 words and need to break down into titles. Do not need to tell me total how many words."""
 

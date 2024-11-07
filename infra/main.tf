@@ -47,6 +47,7 @@ module "lambda" {
   ecs_security_group_id = module.networking.ecs_security_group_id
   private_subnet_ids = module.networking.private_subnet_ids
   search_os_pubmed_lambda_repository_url = module.ecr.search_os_pubmed_lambda_repository_url
+  search_os_pubmed_lambda_repository_name = module.ecr.search_os_pubmed_lambda_repository_name
 }
 
 module "dynamodb" {
